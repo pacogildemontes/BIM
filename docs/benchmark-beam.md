@@ -141,4 +141,24 @@ Cada recomendación debe incluir un **estimado de coste** (bajo, medio, alto) y 
 3. Diseñar el prototipo del apartado web y probarlo con usuarios internos.
 4. Integrar el sistema de recomendaciones con la base de datos de productos y servicios ofrecidos.
 
+codex/create-pc-benchmark-section-for-beam-rfu5ta
+## 10. Referencia de la herramienta automatizada
+
+El repositorio incorpora un script de referencia en `beam_benchmark/` que ejecuta las pruebas descritas y genera un informe en formato Markdown o JSON. Es ideal para obtener una primera aproximación a la puntuación global y validar los pesos definidos.
+
+```bash
+pip install -r requirements.txt
+python -m beam_benchmark --format markdown --skip-network
+```
+
+Para ejecutar las pruebas de red es necesario contar con `speedtest-cli` o el binario oficial de Speedtest en el sistema. Los parámetros disponibles permiten ajustar la duración de las pruebas, el tamaño del archivo temporal para almacenamiento y omitir GPU o red cuando no se disponga de permisos o hardware dedicado. Los resultados pueden integrarse directamente en la web o almacenarse en una base de datos para análisis histórico.
+
+Parámetros destacados:
+
+- `--cpu-duration` y `--cpu-workers` regulan el esfuerzo de la prueba de CPU.
+- `--disk-size` controla el tamaño del archivo temporal (en MB) utilizado para medir lectura/escritura.
+- `--skip-gpu` y `--skip-network` permiten omitir componentes específicos.
+- `--format json` exporta un resumen estructurado listo para la web.
+
+ main
 Este marco te permitirá construir un apartado web funcional, claro y con recomendaciones accionables para tus usuarios centrados en Beam.

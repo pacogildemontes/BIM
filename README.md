@@ -1,4 +1,5 @@
 # BIM
+codex/create-pc-benchmark-section-for-beam-rfu5ta
 Repositorio con documentación y recursos para la definición del apartado de benchmark de equipos Beam.
 
 ## Documentación disponible
@@ -28,3 +29,11 @@ Parámetros útiles:
 - `--disk-size` define el tamaño del archivo temporal usado en el test de almacenamiento.
 - `--format json` genera un JSON fácil de integrar en la web.
 - `--output informe.md` guarda el resultado en un archivo.
+
+
+Repositorio con documentación y recursos para la definición del apartado de benchmark de equipos Beam.
+
+## Documentación disponible
+
+- [Benchmark Beam para Equipos de Visualización BIM](docs/benchmark-beam.md): guía detallada sobre métricas, sistema de puntuación, presentación del informe y recomendaciones de mejora.
+ main

@@ -141,6 +141,7 @@ Cada recomendación debe incluir un **estimado de coste** (bajo, medio, alto) y 
 3. Diseñar el prototipo del apartado web y probarlo con usuarios internos.
 4. Integrar el sistema de recomendaciones con la base de datos de productos y servicios ofrecidos.
 
+codex/create-pc-benchmark-section-for-beam-rfu5ta
 ## 10. Referencia de la herramienta automatizada
 
 El repositorio incorpora un script de referencia en `beam_benchmark/` que ejecuta las pruebas descritas y genera un informe en formato Markdown o JSON. Es ideal para obtener una primera aproximación a la puntuación global y validar los pesos definidos.
@@ -159,4 +160,5 @@ Parámetros destacados:
 - `--skip-gpu` y `--skip-network` permiten omitir componentes específicos.
 - `--format json` exporta un resumen estructurado listo para la web.
 
+ main
 Este marco te permitirá construir un apartado web funcional, claro y con recomendaciones accionables para tus usuarios centrados en Beam.

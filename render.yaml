@@ -1,10 +1,11 @@
 # Blueprint de Render (https://render.com) para desplegar gratis el hub de finanzas.
 # Pasos: en Render → New → Blueprint → conecta este repositorio. Render leerá este
-# archivo y creará el servicio web. Define APP_PASSWORD cuando te lo pida.
+# archivo y creará el servicio web. Define DATABASE_URL y APP_PASSWORD cuando lo pida.
 #
-# Nota: el plan gratuito NO tiene disco persistente, así que la base de datos
-# (SQLite en /tmp) se reinicia en cada redeploy o tras inactividad. Perfecto para
-# PROBAR la app; para uso real conviene un disco de pago o una base de datos externa.
+# Persistencia: el plan gratuito de Render NO tiene disco persistente, por eso usamos
+# una base de datos PostgreSQL externa y persistente (Supabase, plan gratuito) a través
+# de DATABASE_URL. Si NO defines DATABASE_URL, la app cae a SQLite en /tmp (efímero,
+# solo para probar). Ver docs/finanzas.md.
 services:
   - type: web
     name: mis-finanzas
@@ -16,8 +17,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.5"
-      - key: FINANCE_DB
-        value: /tmp/finanzas.db
+      - key: DATABASE_URL
+        sync: false               # cadena de conexión de Supabase (Postgres). Datos persistentes.
       - key: SECRET_KEY
         generateValue: true       # Render genera una clave de sesión segura
       - key: APP_PASSWORD

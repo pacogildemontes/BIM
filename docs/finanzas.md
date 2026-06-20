@@ -51,31 +51,51 @@ FINANCE_DB=/ruta/segura/mis_finanzas.db python run.py
 - **Patrimonio**: desglose del neto por bloques y registro de «otros activos»
   (vehículos, criptos…).
 
-## Despliegue en hosting gratuito (Render)
+## Base de datos: SQLite o PostgreSQL (Supabase)
 
-La app está lista para desplegarse con `gunicorn`. Incluye:
+La app funciona con dos backends, de forma transparente para el código:
 
-- `wsgi.py` (`gunicorn wsgi:app`), `Procfile` y `render.yaml` (blueprint de Render).
-- **Login por contraseña**: si defines la variable `APP_PASSWORD`, la app exige
-  iniciar sesión. Imprescindible antes de exponer datos financieros en internet.
+- **SQLite** (por defecto): para uso local, fichero `finanzas.db`. No requiere nada.
+- **PostgreSQL** (recomendado en producción): se activa **solo** definiendo la variable
+  `DATABASE_URL`. Pensado para una base persistente y gratuita como **Supabase**, de
+  modo que los datos sobrevivan a los reinicios del hosting.
 
-Pasos en [Render](https://render.com) (plan gratuito):
+Ambos caminos están **probados** con la misma suite de pruebas (`tests/test_postgres.py`
+se ejecuta si `DATABASE_URL` apunta a Postgres).
 
-1. Entra en Render → **New → Blueprint** y conecta este repositorio/rama.
-2. Render lee `render.yaml` y crea el servicio. Define `APP_PASSWORD` cuando lo pida.
-3. En 2-3 min tendrás una URL pública (`https://mis-finanzas.onrender.com`).
+## Despliegue gratis: Supabase (datos) + Render (app)
 
-> Aviso del plan gratuito: no tiene disco persistente, así que la base de datos
-> (SQLite en `/tmp`) se reinicia en cada redeploy o tras inactividad. Sirve para
-> **probar** la app; para uso real, añade un disco de pago o una base de datos externa.
+La app está lista para `gunicorn` e incluye `wsgi.py`, `Procfile` y `render.yaml`.
+Además, si defines `APP_PASSWORD`, exige **login por contraseña** (imprescindible
+antes de exponer datos financieros en internet).
+
+**1) Base de datos en [Supabase](https://supabase.com) (gratis):**
+
+1. Crea un proyecto. En *Project Settings → Database → Connection string* copia la
+   cadena en formato **URI** (algo como
+   `postgresql://postgres:TU_PASSWORD@db.xxxxx.supabase.co:5432/postgres`).
+2. Esa cadena es tu `DATABASE_URL`. La app crea las tablas sola en el primer arranque.
+
+**2) App en [Render](https://render.com) (gratis):**
+
+1. Render → **New → Blueprint** y conecta este repositorio/rama.
+2. Render lee `render.yaml`. Cuando lo pida, define:
+   - `DATABASE_URL` → la cadena de Supabase.
+   - `APP_PASSWORD` → la contraseña de acceso a la app.
+3. En 2-3 min tendrás una URL pública (`https://mis-finanzas.onrender.com`) con tus
+   datos guardados de verdad en Supabase.
+
+> Seguridad: estas variables se configuran **en los paneles de Render/Supabase**,
+> nunca en el repositorio. No incluyas contraseñas ni cadenas de conexión en el código.
 
 Variables de entorno relevantes:
 
-| Variable        | Para qué sirve                                             |
-|-----------------|------------------------------------------------------------|
-| `APP_PASSWORD`  | Activa el login y define la contraseña de acceso.          |
-| `SECRET_KEY`    | Clave de sesión (Render la genera sola con el blueprint).  |
-| `FINANCE_DB`    | Ruta del fichero SQLite.                                    |
+| Variable        | Para qué sirve                                                      |
+|-----------------|--------------------------------------------------------------------|
+| `DATABASE_URL`  | Cadena Postgres (Supabase). Si no se define, se usa SQLite local.  |
+| `APP_PASSWORD`  | Activa el login y define la contraseña de acceso.                  |
+| `SECRET_KEY`    | Clave de sesión (Render la genera sola con el blueprint).          |
+| `FINANCE_DB`    | Ruta del fichero SQLite (solo backend SQLite).                     |
 
 ## Arquitectura
 

@@ -1,0 +1,24 @@
+# Blueprint de Render (https://render.com) para desplegar gratis el hub de finanzas.
+# Pasos: en Render → New → Blueprint → conecta este repositorio. Render leerá este
+# archivo y creará el servicio web. Define APP_PASSWORD cuando te lo pida.
+#
+# Nota: el plan gratuito NO tiene disco persistente, así que la base de datos
+# (SQLite en /tmp) se reinicia en cada redeploy o tras inactividad. Perfecto para
+# PROBAR la app; para uso real conviene un disco de pago o una base de datos externa.
+services:
+  - type: web
+    name: mis-finanzas
+    runtime: python
+    plan: free
+    branch: claude/personal-finance-tracker-wrbtdz
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.5"
+      - key: FINANCE_DB
+        value: /tmp/finanzas.db
+      - key: SECRET_KEY
+        generateValue: true       # Render genera una clave de sesión segura
+      - key: APP_PASSWORD
+        sync: false               # la defines tú en el panel (login de la app)

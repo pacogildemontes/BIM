@@ -17,14 +17,14 @@
     </div>
     <div class="col-md-3 col-6">
         <div class="card h-100"><div class="card-body">
-            <div class="text-uppercase small text-muted">Activos</div>
-            <div class="fs-5 fw-bold">{{ summary.assets_value | eur }}</div>
+            <div class="text-uppercase small text-muted">Inversiones</div>
+            <div class="fs-5 fw-bold">{{ summary.investments_value | eur }}</div>
         </div></div>
     </div>
     <div class="col-md-3 col-6">
         <div class="card h-100"><div class="card-body">
-            <div class="text-uppercase small text-muted">Deudas</div>
-            <div class="fs-5 fw-bold text-danger">{{ summary.liabilities | eur }}</div>
+            <div class="text-uppercase small text-muted">Viviendas (neto)</div>
+            <div class="fs-5 fw-bold">{{ (summary.properties_value - summary.mortgages) | eur }}</div>
         </div></div>
     </div>
 </div>

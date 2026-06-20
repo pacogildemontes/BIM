@@ -18,9 +18,14 @@
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Resumen</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('accounts') }}">Cuentas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('properties') }}">Viviendas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('investments') }}">Inversiones</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('assets') }}">Patrimonio</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('obligations') }}">Calendario</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('import_csv') }}">Importar</a></li>
+                {% if session.get('auth') %}
+                <li class="nav-item"><a class="nav-link text-warning" href="{{ url_for('logout') }}">Salir</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>

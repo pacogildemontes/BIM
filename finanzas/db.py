@@ -22,10 +22,21 @@ def get_connection(db_path: str | None = None) -> sqlite3.Connection:
 
 
 def init_db(db_path: str | None = None) -> None:
-    """Crea las tablas si no existen."""
+    """Crea las tablas si no existen y aplica migraciones ligeras."""
     conn = get_connection(db_path)
     try:
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        _migrate(conn)
         conn.commit()
     finally:
         conn.close()
+
+
+def _columns(conn, table: str) -> set[str]:
+    return {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _migrate(conn) -> None:
+    """Añade columnas nuevas a bases de datos creadas con versiones anteriores."""
+    if "property_id" not in _columns(conn, "obligations"):
+        conn.execute("ALTER TABLE obligations ADD COLUMN property_id INTEGER REFERENCES properties(id)")

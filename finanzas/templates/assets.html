@@ -3,24 +3,29 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="mb-0">Patrimonio</h3>
-    <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#nuevoActivo">+ Nuevo activo</button>
+    <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#nuevoActivo">+ Otro activo</button>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="card text-bg-primary"><div class="card-body">
-        <div class="small text-uppercase opacity-75">Patrimonio neto total</div>
-        <div class="fs-4 fw-bold">{{ summary.net_worth | eur }}</div>
-        <div class="small opacity-75">Cuentas + activos − deudas</div>
-    </div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body">
-        <div class="small text-uppercase text-muted">Valor de activos</div>
-        <div class="fs-5 fw-bold">{{ summary.assets_value | eur }}</div>
-    </div></div></div>
-    <div class="col-md-4"><div class="card"><div class="card-body">
-        <div class="small text-uppercase text-muted">Deudas asociadas</div>
-        <div class="fs-5 fw-bold text-danger">{{ summary.liabilities | eur }}</div>
-    </div></div></div>
-</div>
+<div class="card mb-4"><div class="card-body">
+    <div class="row align-items-center">
+        <div class="col-md-4 border-end">
+            <div class="small text-uppercase text-muted">Patrimonio neto total</div>
+            <div class="display-6 fw-bold text-primary">{{ summary.net_worth | eur }}</div>
+        </div>
+        <div class="col-md-8">
+            <table class="table table-sm mb-0">
+                <tr><td>Cuentas</td><td class="text-end fw-bold">{{ summary.accounts_total | eur }}</td></tr>
+                <tr><td>Inversiones</td><td class="text-end fw-bold">{{ summary.investments_value | eur }}</td></tr>
+                <tr><td>Viviendas (valor)</td><td class="text-end fw-bold">{{ summary.properties_value | eur }}</td></tr>
+                <tr><td>Otros activos</td><td class="text-end fw-bold">{{ summary.other_assets | eur }}</td></tr>
+                <tr class="text-danger"><td>− Hipotecas / deudas</td><td class="text-end fw-bold">{{ summary.mortgages | eur }}</td></tr>
+            </table>
+        </div>
+    </div>
+</div></div>
+
+<h5>Otros activos</h5>
+<p class="text-muted small">Para propiedades usa <a href="{{ url_for('properties') }}">Viviendas</a> y para ETFs/fondos <a href="{{ url_for('investments') }}">Inversiones</a>. Aquí van activos sueltos (vehículos, criptos, etc.).</p>
 
 <div class="collapse mb-4" id="nuevoActivo">
     <div class="card card-body">

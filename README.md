@@ -9,9 +9,11 @@ Repositorio con documentación y recursos para la definición del apartado de be
 ## Hub de finanzas personales
 
 App web (Flask + SQLite) para tener en un solo sitio cuentas bancarias y de inversión,
-patrimonio (propiedades, fondos) y un calendario de vencimientos (seguros, IBI, IRPF,
-IVA trimestral…), con importación de extractos en CSV. Los datos se guardan en un
-fichero local `finanzas.db` (no se sube al repositorio).
+**viviendas** (ficha por inmueble con sus suministros, gastos y rentabilidad de alquiler),
+una **cartera de inversión** que replica y simula tu plan de ETFs/fondos, y un
+**calendario de vencimientos** (seguros, IBI, IRPF, IVA trimestral…), con importación
+de extractos en CSV. Los datos se guardan en un fichero local `finanzas.db` (no se sube
+al repositorio). Lista para desplegar gratis en Render (ver [docs/finanzas.md](docs/finanzas.md)).
 
 ```bash
 pip install -r requirements.txt

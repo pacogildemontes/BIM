@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Viviendas — Mis Finanzas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Viviendas e inmuebles</h3>
+    <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#nuevaProp">+ Nueva vivienda</button>
+</div>
+
+<div class="collapse mb-4" id="nuevaProp">
+    <div class="card card-body">
+        <form method="post" action="{{ url_for('property_create') }}" class="row g-2">
+            <div class="col-md-4"><input name="name" class="form-control" placeholder="Nombre (p.ej. Piso Calle Mayor)" required></div>
+            <div class="col-md-4"><input name="address" class="form-control" placeholder="Dirección"></div>
+            <div class="col-md-2"><select name="type" class="form-select">
+                {% for t in property_types %}<option value="{{ t }}">{{ t | capitalize }}</option>{% endfor %}
+            </select></div>
+            <div class="col-md-2"><input name="value" class="form-control" placeholder="Valor" inputmode="decimal"></div>
+            <div class="col-md-3"><input name="mortgage" class="form-control" placeholder="Hipoteca pendiente" inputmode="decimal"></div>
+            <div class="col-md-3"><input name="purchase_price" class="form-control" placeholder="Precio compra" inputmode="decimal"></div>
+            <div class="col-md-3"><input name="monthly_rent" class="form-control" placeholder="Alquiler mensual" inputmode="decimal"></div>
+            <div class="col-md-3"><input name="tenant" class="form-control" placeholder="Inquilino"></div>
+            <div class="col-md-3 form-check ms-2 mt-2">
+                <input class="form-check-input" type="checkbox" name="rented" id="rented">
+                <label class="form-check-label" for="rented">Alquilada actualmente</label>
+            </div>
+            <div class="col-12"><button class="btn btn-success">Guardar</button></div>
+        </form>
+    </div>
+</div>
+
+{% if properties %}
+<div class="row g-3">
+    {% for p in properties %}
+    <div class="col-md-6">
+        <div class="card h-100"><div class="card-body">
+            <div class="d-flex justify-content-between">
+                <h5 class="mb-1"><a href="{{ url_for('property_detail', property_id=p.id) }}">{{ p.name }}</a></h5>
+                <span class="badge bg-secondary align-self-start">{{ p.type }}</span>
+            </div>
+            <div class="text-muted small mb-2">{{ p.address or '' }}</div>
+            <div class="row text-center">
+                <div class="col"><div class="small text-muted">Valor</div><div class="fw-bold">{{ p.value | eur }}</div></div>
+                <div class="col"><div class="small text-muted">Hipoteca</div><div class="fw-bold text-danger">{{ p.mortgage | eur }}</div></div>
+                <div class="col"><div class="small text-muted">Neto</div><div class="fw-bold">{{ (p.value - p.mortgage) | eur }}</div></div>
+            </div>
+            {% if p.rented %}
+            <div class="mt-2 small"><span class="badge bg-success">Alquilada</span>
+                {{ p.monthly_rent | eur }}/mes {% if p.tenant %}· {{ p.tenant }}{% endif %}</div>
+            {% endif %}
+            <a class="btn btn-sm btn-outline-primary mt-3" href="{{ url_for('property_detail', property_id=p.id) }}">Ver ficha →</a>
+        </div></div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-muted">Aún no has registrado inmuebles. Crea el primero con el botón de arriba.</p>
+{% endif %}
+{% endblock %}

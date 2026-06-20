@@ -121,35 +121,41 @@ def delete_asset(db, asset_id):
 
 # --- Obligaciones / vencimientos --------------------------------------------
 
-def list_obligations(db, order_by_due=True):
+def list_obligations(db, order_by_due=True, property_id=None):
     sql = (
-        "SELECT o.*, a.name AS account_name FROM obligations o "
-        "LEFT JOIN accounts a ON a.id = o.account_id"
+        "SELECT o.*, a.name AS account_name, p.name AS property_name FROM obligations o "
+        "LEFT JOIN accounts a ON a.id = o.account_id "
+        "LEFT JOIN properties p ON p.id = o.property_id"
     )
+    params = []
+    if property_id is not None:
+        sql += " WHERE o.property_id = ?"
+        params.append(property_id)
     sql += " ORDER BY o.due_date" if order_by_due else " ORDER BY o.name"
-    return db.execute(sql).fetchall()
+    return db.execute(sql, params).fetchall()
 
 
 def get_obligation(db, obligation_id):
     return db.execute("SELECT * FROM obligations WHERE id = ?", (obligation_id,)).fetchone()
 
 
-def create_obligation(db, name, category, amount, due_date, recurrence, account_id, notes):
+def create_obligation(db, name, category, amount, due_date, recurrence, account_id, notes,
+                      property_id=None):
     cur = db.execute(
-        "INSERT INTO obligations (name, category, amount, due_date, recurrence, account_id, notes) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (name, category, amount, due_date, recurrence, account_id, notes),
+        "INSERT INTO obligations (name, category, amount, due_date, recurrence, account_id, "
+        "property_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, category, amount, due_date, recurrence, account_id, property_id, notes),
     )
     db.commit()
     return cur.lastrowid
 
 
 def update_obligation(db, obligation_id, name, category, amount, due_date, recurrence,
-                      account_id, notes):
+                      account_id, notes, property_id=None):
     db.execute(
         "UPDATE obligations SET name=?, category=?, amount=?, due_date=?, recurrence=?, "
-        "account_id=?, notes=? WHERE id=?",
-        (name, category, amount, due_date, recurrence, account_id, notes, obligation_id),
+        "account_id=?, property_id=?, notes=? WHERE id=?",
+        (name, category, amount, due_date, recurrence, account_id, property_id, notes, obligation_id),
     )
     db.commit()
 
@@ -161,10 +167,18 @@ def delete_obligation(db, obligation_id):
 
 _NEXT_DELTA = {
     "mensual": lambda d: _add_months(d, 1),
+    "bimestral": lambda d: _add_months(d, 2),
     "trimestral": lambda d: _add_months(d, 3),
     "semestral": lambda d: _add_months(d, 6),
     "anual": lambda d: _add_months(d, 12),
 }
+
+# Cuántas veces al año se paga cada recurrencia (para anualizar gastos).
+PER_YEAR = {"mensual": 12, "bimestral": 6, "trimestral": 4, "semestral": 2, "anual": 1, "unica": 0}
+
+
+def annualize(amount, recurrence):
+    return (amount or 0) * PER_YEAR.get(recurrence, 0)
 
 
 def _add_months(d: date, months: int) -> date:
@@ -206,15 +220,189 @@ def upcoming_obligations(db, days=30):
     ).fetchall()
 
 
+# --- Viviendas / inmuebles ---------------------------------------------------
+
+def list_properties(db):
+    return db.execute("SELECT * FROM properties ORDER BY name").fetchall()
+
+
+def get_property(db, property_id):
+    return db.execute("SELECT * FROM properties WHERE id = ?", (property_id,)).fetchone()
+
+
+def create_property(db, name, address, type_, value, mortgage, purchase_price,
+                    rented, monthly_rent, tenant, notes):
+    cur = db.execute(
+        "INSERT INTO properties (name, address, type, value, mortgage, purchase_price, "
+        "rented, monthly_rent, tenant, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (name, address, type_, value, mortgage, purchase_price, rented, monthly_rent, tenant, notes),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+def update_property(db, property_id, name, address, type_, value, mortgage, purchase_price,
+                    rented, monthly_rent, tenant, notes):
+    db.execute(
+        "UPDATE properties SET name=?, address=?, type=?, value=?, mortgage=?, purchase_price=?, "
+        "rented=?, monthly_rent=?, tenant=?, notes=? WHERE id=?",
+        (name, address, type_, value, mortgage, purchase_price, rented, monthly_rent, tenant,
+         notes, property_id),
+    )
+    db.commit()
+
+
+def delete_property(db, property_id):
+    db.execute("DELETE FROM properties WHERE id = ?", (property_id,))
+    db.commit()
+
+
+def property_finances(db, property_id):
+    """Resumen económico de una vivienda: gastos anuales y rentabilidad neta."""
+    prop = get_property(db, property_id)
+    if prop is None:
+        return None
+    obligations = list_obligations(db, property_id=property_id)
+    annual_expenses = sum(annualize(o["amount"], o["recurrence"]) for o in obligations)
+    # Gastos de pago único: se cuentan tal cual en el total anual aproximado.
+    annual_expenses += sum((o["amount"] or 0) for o in obligations if o["recurrence"] == "unica")
+    annual_rent = (prop["monthly_rent"] or 0) * 12 if prop["rented"] else 0
+    net_annual = annual_rent - annual_expenses
+    net_equity = (prop["value"] or 0) - (prop["mortgage"] or 0)
+    gross_yield = (annual_rent / prop["value"] * 100) if prop["value"] else None
+    net_yield = (net_annual / prop["value"] * 100) if prop["value"] else None
+    return {
+        "property": prop,
+        "obligations": obligations,
+        "annual_expenses": annual_expenses,
+        "annual_rent": annual_rent,
+        "net_annual": net_annual,
+        "net_equity": net_equity,
+        "gross_yield": gross_yield,
+        "net_yield": net_yield,
+    }
+
+
+# --- Cartera de inversión (ETFs/fondos) -------------------------------------
+
+def list_holdings(db):
+    return db.execute("SELECT * FROM holdings ORDER BY name").fetchall()
+
+
+def get_holding(db, holding_id):
+    return db.execute("SELECT * FROM holdings WHERE id = ?", (holding_id,)).fetchone()
+
+
+def create_holding(db, ticker, name, category, units, avg_cost, current_price, target_pct, notes):
+    cur = db.execute(
+        "INSERT INTO holdings (ticker, name, category, units, avg_cost, current_price, "
+        "target_pct, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (ticker, name, category, units, avg_cost, current_price, target_pct, notes),
+    )
+    db.commit()
+    return cur.lastrowid
+
+
+def update_holding(db, holding_id, ticker, name, category, units, avg_cost, current_price,
+                   target_pct, notes):
+    db.execute(
+        "UPDATE holdings SET ticker=?, name=?, category=?, units=?, avg_cost=?, current_price=?, "
+        "target_pct=?, notes=? WHERE id=?",
+        (ticker, name, category, units, avg_cost, current_price, target_pct, notes, holding_id),
+    )
+    db.commit()
+
+
+def delete_holding(db, holding_id):
+    db.execute("DELETE FROM holdings WHERE id = ?", (holding_id,))
+    db.commit()
+
+
+def get_investment_plan(db):
+    return db.execute("SELECT * FROM investment_plan WHERE id = 1").fetchone()
+
+
+def update_investment_plan(db, monthly_contribution, expected_return, notes):
+    db.execute(
+        "UPDATE investment_plan SET monthly_contribution=?, expected_return=?, notes=? WHERE id=1",
+        (monthly_contribution, expected_return, notes),
+    )
+    db.commit()
+
+
+def _holding_value(h):
+    price = h["current_price"] if h["current_price"] is not None else h["avg_cost"]
+    return (h["units"] or 0) * (price or 0)
+
+
+def portfolio_summary(db):
+    holdings = list_holdings(db)
+    invested = sum((h["units"] or 0) * (h["avg_cost"] or 0) for h in holdings)
+    value = sum(_holding_value(h) for h in holdings)
+    rows = []
+    for h in holdings:
+        v = _holding_value(h)
+        cost = (h["units"] or 0) * (h["avg_cost"] or 0)
+        rows.append({
+            "h": h,
+            "value": v,
+            "cost": cost,
+            "pl": v - cost,
+            "pl_pct": ((v - cost) / cost * 100) if cost else None,
+            "weight": (v / value * 100) if value else None,
+            "drift": ((v / value * 100) - h["target_pct"]) if (value and h["target_pct"] is not None) else None,
+        })
+    return {
+        "rows": rows,
+        "invested": invested,
+        "value": value,
+        "pl": value - invested,
+        "pl_pct": ((value - invested) / invested * 100) if invested else None,
+        "plan": get_investment_plan(db),
+    }
+
+
+def project_portfolio(value, monthly_contribution, annual_return_pct, years=20):
+    """Proyección simple con interés compuesto mensual y aportación periódica."""
+    r = (annual_return_pct or 0) / 100 / 12
+    horizons = [1, 3, 5, 10, 15, 20]
+    horizons = [y for y in horizons if y <= years]
+    projection = []
+    for y in horizons:
+        months = y * 12
+        fv = value * ((1 + r) ** months)
+        if r:
+            fv += monthly_contribution * (((1 + r) ** months - 1) / r)
+        else:
+            fv += monthly_contribution * months
+        contributed = value + monthly_contribution * months
+        projection.append({
+            "years": y,
+            "value": fv,
+            "contributed": contributed,
+            "gains": fv - contributed,
+        })
+    return projection
+
+
 # --- Resumen / patrimonio ----------------------------------------------------
 
 def net_worth_summary(db):
     accounts_total = db.execute("SELECT COALESCE(SUM(balance), 0) AS s FROM accounts").fetchone()["s"]
-    assets_value = db.execute("SELECT COALESCE(SUM(value), 0) AS s FROM assets").fetchone()["s"]
-    liabilities = db.execute("SELECT COALESCE(SUM(liability), 0) AS s FROM assets").fetchone()["s"]
+    other_assets = db.execute("SELECT COALESCE(SUM(value - liability), 0) AS s FROM assets").fetchone()["s"]
+    prop = db.execute(
+        "SELECT COALESCE(SUM(value), 0) AS v, COALESCE(SUM(mortgage), 0) AS m FROM properties"
+    ).fetchone()
+    properties_value = prop["v"]
+    mortgages = prop["m"]
+    investments_value = portfolio_summary(db)["value"]
+    net_worth = accounts_total + other_assets + investments_value + properties_value - mortgages
     return {
         "accounts_total": accounts_total,
-        "assets_value": assets_value,
-        "liabilities": liabilities,
-        "net_worth": accounts_total + assets_value - liabilities,
+        "properties_value": properties_value,
+        "mortgages": mortgages,
+        "investments_value": investments_value,
+        "other_assets": other_assets,
+        "liabilities": mortgages,
+        "net_worth": net_worth,
     }

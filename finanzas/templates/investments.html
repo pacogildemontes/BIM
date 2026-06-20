@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Inversiones — Mis Finanzas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Cartera de inversión</h3>
+    <div>
+        <button class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#editPlan">Plan</button>
+        <button class="btn btn-primary" data-bs-toggle="collapse" data-bs-target="#nuevaPos">+ Posición</button>
+    </div>
+</div>
+<p class="text-muted">Replica tu plan (ETFs/fondos con % objetivo e importes) y simula su evolución. No conecta con el bróker: el precio actual se actualiza a mano.</p>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body">
+        <div class="small text-uppercase text-muted">Invertido</div><div class="fs-5 fw-bold">{{ summary.invested | eur }}</div>
+    </div></div></div>
+    <div class="col-md-3 col-6"><div class="card text-bg-primary h-100"><div class="card-body">
+        <div class="small text-uppercase opacity-75">Valor actual</div><div class="fs-5 fw-bold">{{ summary.value | eur }}</div>
+    </div></div></div>
+    <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body">
+        <div class="small text-uppercase text-muted">Ganancia/Pérdida</div>
+        <div class="fs-5 fw-bold {{ 'text-success' if summary.pl >= 0 else 'text-danger' }}">{{ summary.pl | eur }}</div>
+        {% if summary.pl_pct is not none %}<div class="small text-muted">{{ '%.2f'|format(summary.pl_pct) }}%</div>{% endif %}
+    </div></div></div>
+    <div class="col-md-3 col-6"><div class="card h-100"><div class="card-body">
+        <div class="small text-uppercase text-muted">Aportación / Rent. esperada</div>
+        <div class="fs-6 fw-bold">{{ plan.monthly_contribution | eur }}/mes · {{ '%.1f'|format(plan.expected_return) }}%</div>
+    </div></div></div>
+</div>
+
+<div class="collapse mb-3" id="editPlan">
+    <div class="card card-body">
+        <form method="post" action="{{ url_for('plan_update') }}" class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="form-label small">Aportación mensual (€)</label>
+                <input name="monthly_contribution" class="form-control" value="{{ plan.monthly_contribution }}" inputmode="decimal"></div>
+            <div class="col-md-3"><label class="form-label small">Rentabilidad anual esperada (%)</label>
+                <input name="expected_return" class="form-control" value="{{ plan.expected_return }}" inputmode="decimal"></div>
+            <div class="col-md-4"><label class="form-label small">Notas del plan</label>
+                <input name="notes" class="form-control" value="{{ plan.notes or '' }}"></div>
+            <div class="col-md-2"><button class="btn btn-success w-100">Guardar plan</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="collapse mb-3" id="nuevaPos">
+    <div class="card card-body">
+        <form method="post" action="{{ url_for('holding_create') }}" class="row g-2">
+            <div class="col-md-2"><input name="ticker" class="form-control" placeholder="Ticker (VWCE)"></div>
+            <div class="col-md-3"><input name="name" class="form-control" placeholder="Nombre del ETF/fondo" required></div>
+            <div class="col-md-2"><input name="category" class="form-control" placeholder="Categoría"></div>
+            <div class="col-md-1"><input name="units" class="form-control" placeholder="Part." inputmode="decimal"></div>
+            <div class="col-md-2"><input name="avg_cost" class="form-control" placeholder="Coste medio" inputmode="decimal"></div>
+            <div class="col-md-2"><input name="current_price" class="form-control" placeholder="Precio actual" inputmode="decimal"></div>
+            <div class="col-md-2"><input name="target_pct" class="form-control" placeholder="% objetivo" inputmode="decimal"></div>
+            <div class="col-md-2"><button class="btn btn-success w-100">Añadir</button></div>
+        </form>
+    </div>
+</div>
+
+{% if summary.rows %}
+<table class="table table-hover align-middle">
+    <thead><tr>
+        <th>Posición</th><th class="text-end">Part.</th><th class="text-end">Coste medio</th>
+        <th class="text-end">Precio</th><th class="text-end">Valor</th><th class="text-end">P/L</th>
+        <th class="text-end">Peso</th><th class="text-end">Objetivo</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for r in summary.rows %}
+    <tr>
+        <td>
+            {% if r.h.ticker %}<span class="badge bg-dark">{{ r.h.ticker }}</span> {% endif %}{{ r.h.name }}
+            {% if r.h.category %}<div class="small text-muted">{{ r.h.category }}</div>{% endif %}
+        </td>
+        <td class="text-end">{{ '%.4f'|format(r.h.units) }}</td>
+        <td class="text-end">{{ r.h.avg_cost | eur }}</td>
+        <td class="text-end">{{ r.h.current_price | eur if r.h.current_price is not none else '—' }}</td>
+        <td class="text-end fw-bold">{{ r.value | eur }}</td>
+        <td class="text-end {{ 'text-success' if r.pl >= 0 else 'text-danger' }}">
+            {{ r.pl | eur }}{% if r.pl_pct is not none %}<div class="small">{{ '%.1f'|format(r.pl_pct) }}%</div>{% endif %}
+        </td>
+        <td class="text-end">{{ '%.1f'|format(r.weight) if r.weight is not none else '—' }}%</td>
+        <td class="text-end">
+            {{ '%.0f'|format(r.h.target_pct) ~ '%' if r.h.target_pct is not none else '—' }}
+            {% if r.drift is not none %}<div class="small {{ 'text-danger' if r.drift|abs > 5 else 'text-muted' }}">{{ '%+.1f'|format(r.drift) }}</div>{% endif %}
+        </td>
+        <td class="text-end">
+            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#h{{ r.h.id }}">✎</button>
+            <form method="post" action="{{ url_for('holding_delete', holding_id=r.h.id) }}" class="d-inline">
+                <button class="btn btn-sm btn-outline-danger">×</button>
+            </form>
+        </td>
+    </tr>
+    <tr class="collapse" id="h{{ r.h.id }}"><td colspan="9">
+        <form method="post" action="{{ url_for('holding_update', holding_id=r.h.id) }}" class="row g-2">
+            <div class="col-md-2"><input name="ticker" class="form-control form-control-sm" value="{{ r.h.ticker or '' }}" placeholder="Ticker"></div>
+            <div class="col-md-3"><input name="name" class="form-control form-control-sm" value="{{ r.h.name }}" required></div>
+            <div class="col-md-2"><input name="category" class="form-control form-control-sm" value="{{ r.h.category or '' }}" placeholder="Categoría"></div>
+            <div class="col-md-1"><input name="units" class="form-control form-control-sm" value="{{ r.h.units }}"></div>
+            <div class="col-md-2"><input name="avg_cost" class="form-control form-control-sm" value="{{ r.h.avg_cost }}"></div>
+            <div class="col-md-2"><input name="current_price" class="form-control form-control-sm" value="{{ r.h.current_price if r.h.current_price is not none else '' }}" placeholder="Precio actual"></div>
+            <div class="col-md-2"><input name="target_pct" class="form-control form-control-sm" value="{{ r.h.target_pct if r.h.target_pct is not none else '' }}" placeholder="% objetivo"></div>
+            <div class="col-md-2"><button class="btn btn-sm btn-success w-100">OK</button></div>
+        </form>
+    </td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h5 class="mt-4">Proyección simulada</h5>
+<p class="text-muted small">Partiendo del valor actual ({{ summary.value | eur }}), con {{ plan.monthly_contribution | eur }}/mes
+y {{ '%.1f'|format(plan.expected_return) }}% anual (interés compuesto mensual).</p>
+<table class="table table-sm" style="max-width: 640px;">
+    <thead><tr><th>Plazo</th><th class="text-end">Aportado</th><th class="text-end">Valor estimado</th><th class="text-end">Plusvalía</th></tr></thead>
+    <tbody>
+    {% for p in projection %}
+    <tr>
+        <td>{{ p.years }} año{{ 's' if p.years > 1 }}</td>
+        <td class="text-end text-muted">{{ p.contributed | eur }}</td>
+        <td class="text-end fw-bold">{{ p.value | eur }}</td>
+        <td class="text-end text-success">{{ p.gains | eur }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">Aún no has añadido posiciones. Pulsa «+ Posición» o pásame tu plan de inversión (ETFs, importes y % objetivo) y lo cargo.</p>
+{% endif %}
+{% endblock %}

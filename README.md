@@ -4,6 +4,23 @@ Repositorio con documentación y recursos para la definición del apartado de be
 
 ## Documentación disponible
 - [Benchmark Beam para Equipos de Visualización BIM](docs/benchmark-beam.md): guía detallada sobre métricas, sistema de puntuación, presentación del informe y recomendaciones de mejora.
+- [Hub de finanzas personales](docs/finanzas.md): app web local para centralizar cuentas, patrimonio y calendario de obligaciones (seguros, IBI, impuestos…).
+
+## Hub de finanzas personales
+
+App web (Flask + SQLite) para tener en un solo sitio cuentas bancarias y de inversión,
+patrimonio (propiedades, fondos) y un calendario de vencimientos (seguros, IBI, IRPF,
+IVA trimestral…), con importación de extractos en CSV. Los datos se guardan en un
+fichero local `finanzas.db` (no se sube al repositorio).
+
+```bash
+pip install -r requirements.txt
+python run.py
+# Abre http://127.0.0.1:5000  (usa --host 0.0.0.0 para entrar desde el móvil)
+```
+
+Más detalles y roadmap (incluida la conexión bancaria automática vía Open Banking)
+en [docs/finanzas.md](docs/finanzas.md).
 
 ## Benchmark automatizado
 

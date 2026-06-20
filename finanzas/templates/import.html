@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Importar extracto — Mis Finanzas{% endblock %}
+{% block content %}
+<h3 class="mb-3">Importar extracto (CSV)</h3>
+
+{% if accounts %}
+<div class="card card-body mb-4" style="max-width: 640px;">
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Cuenta destino</label>
+            <select name="account_id" class="form-select" required>
+                <option value="">— Elige una cuenta —</option>
+                {% for a in accounts %}<option value="{{ a.id }}">{{ a.name }} ({{ a.institution or a.type }})</option>{% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Archivo CSV</label>
+            <input type="file" name="file" accept=".csv,text/csv" class="form-control" required>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="adjust_balance" id="adj" checked>
+            <label class="form-check-label" for="adj">Ajustar el saldo de la cuenta con el neto importado</label>
+        </div>
+        <button class="btn btn-primary">Importar</button>
+    </form>
+</div>
+{% else %}
+<div class="alert alert-warning">Primero <a href="{{ url_for('accounts') }}">crea una cuenta</a> donde importar los movimientos.</div>
+{% endif %}
+
+<div class="card card-body bg-light" style="max-width: 640px;">
+    <h6>Formato esperado</h6>
+    <p class="small mb-2">El importador detecta automáticamente las columnas más habituales en extractos
+    españoles e ingleses. Solo necesita una columna de <strong>fecha</strong> y otra de <strong>importe</strong>
+    (o columnas separadas de <em>Debe/Haber</em>).</p>
+    <pre class="small mb-0">Fecha;Concepto;Importe
+01/06/2026;Nómina;1.850,00
+03/06/2026;Supermercado;-64,30
+05/06/2026;Recibo seguro hogar;-32,10</pre>
+</div>
+{% endblock %}

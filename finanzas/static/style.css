@@ -1,0 +1,6 @@
+body { background-color: #f5f6f8; }
+.card { border: none; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.navbar-brand { letter-spacing: .3px; }
+.table > :not(caption) > * > * { padding: .55rem .5rem; }
+h3, h5 { color: #222; }
+pre { background: transparent; }

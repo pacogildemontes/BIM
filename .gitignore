@@ -1,2 +1,9 @@
 __pycache__/
 *.pyc
+
+# Base de datos local del hub de finanzas (datos personales: no subir)
+finanzas.db
+*.sqlite
+*.sqlite3
+.venv/
+venv/
